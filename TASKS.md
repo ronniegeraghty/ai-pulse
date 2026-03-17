@@ -51,8 +51,8 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
 | T15 | Side panel / abandon drill-down — Click abandon bar → scrollable PR list (#number linked, title, cost, comments, age). Sticky desktop, below on mobile. Close button. | ✅ | ⬜ V15 |
-| T16 | GitHub Actions workflow — `.github/workflows/collect-and-deploy.yml`: push main + workflow_dispatch + schedule Mon 6am UTC. Repo vars for config. Build _site/ with HTML + data. Deploy Pages. | ✅ | ⬜ V16 |
-| T17 | README.md — Full setup instructions, env var reference table, npm scripts, architecture overview, link to live dashboard. | ✅ | ⬜ V17 |
+| T16 | GitHub Actions workflow — `.github/workflows/collect-and-deploy.yml`: push main + workflow_dispatch + schedule Mon 6am UTC. Repo vars for config. Build _site/ with HTML + data. Deploy Pages. | ✅ | ✅ V16 |
+| T17 | README.md — Full setup instructions, env var reference table, npm scripts, architecture overview, link to live dashboard. | ✅ | ✅ V17 |
 
 ## Wave 8: End-to-End Testing
 
