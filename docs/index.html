@@ -287,6 +287,21 @@
       margin-top: 4px;
     }
 
+    .pr-item .pr-superseded {
+      font-size: 0.8rem;
+      color: var(--orange);
+      margin-top: 4px;
+    }
+
+    .pr-item .pr-superseded a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .pr-item .pr-superseded a:hover {
+      text-decoration: underline;
+    }
+
     /* ─── Responsive ─── */
     @media (max-width: 900px) {
       body {
@@ -582,6 +597,37 @@
       document.getElementById('sidePanel').classList.add('hidden');
     }
 
+    // ─── Side Panel Drill-Down ───
+    function renderPRItem(pr) {
+      const item = document.createElement('div');
+      item.className = 'pr-item';
+      const daysAgo = Math.floor((Date.now() - new Date(pr.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+      item.innerHTML = `
+        <a class="pr-number" href="${pr.url}" target="_blank">#${pr.number}</a>
+        <div class="pr-title">${pr.title}</div>
+        <div class="pr-meta">${pr.state === 'merged' ? '✅ Merged' : '❌ Abandoned'} · Cost: ${pr.costScore} · ${pr.commentCount} comments · ${daysAgo}d ago</div>
+        ${pr.supersededBy ? `<div class="pr-superseded">→ Superseded by <a href="https://github.com/${pr.repo}/pull/${pr.supersededBy.number}" target="_blank">#${pr.supersededBy.number}</a>: ${pr.supersededBy.title}</div>` : ''}
+      `;
+      return item;
+    }
+
+    function showPRList(title, prs) {
+      document.getElementById('sidePanelTitle').textContent = title;
+      document.getElementById('sidePanelCount').textContent = prs.length + ' PRs';
+      const body = document.getElementById('sidePanelBody');
+      body.innerHTML = '';
+      for (const pr of prs) {
+        body.appendChild(renderPRItem(pr));
+      }
+      document.getElementById('sidePanel').classList.remove('hidden');
+    }
+
+    function showAbandonedPRs(reason) {
+      const abandonedPRs = filteredPRs.filter(pr => pr.state === 'abandoned' && pr.abandonReason === reason);
+      const reasonLabel = REASON_LABELS[reason] || reason;
+      showPRList(reasonLabel, abandonedPRs);
+    }
+
     // ─── URL Parameter Sync ───
     function applyURLParams() {
       const params = new URLSearchParams(window.location.search);
@@ -671,6 +717,16 @@
           },
           options: {
             responsive: true,
+            onClick: (event, elements) => {
+              if (elements.length === 0) return;
+              const el = elements[0];
+              const weekIdx = el.index;
+              const weekKey = weeks[weekIdx][0];
+              const weekPRs = weeks[weekIdx][1];
+              const state = el.datasetIndex === 0 ? 'merged' : 'abandoned';
+              const matched = weekPRs.filter(p => p.state === state);
+              showPRList(`${state === 'merged' ? 'Merged' : 'Abandoned'} — week of ${formatWeekLabel(weekKey)}`, matched);
+            },
             scales: {
               x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
               y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, beginAtZero: true }
@@ -901,6 +957,14 @@
           options: {
             indexAxis: 'y',
             responsive: true,
+            onClick: (event, elements) => {
+              if (elements.length === 0) return;
+              const el = elements[0];
+              const areaLabel = labels[el.index];
+              const state = el.datasetIndex === 0 ? 'merged' : 'abandoned';
+              const matched = prs.filter(p => p.labels.includes(areaLabel) && p.state === state);
+              showPRList(`${areaLabel} — ${state}`, matched);
+            },
             plugins: { legend: { labels: { color: '#8b949e' } } },
             scales: {
               x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
@@ -995,6 +1059,7 @@
       }
       const sorted = Object.entries(reasonCounts)
         .sort(([, a], [, b]) => b - a);
+      const reasonKeys = sorted.map(([r]) => r);
       const labels = sorted.map(([r]) => REASON_LABELS[r] || r);
       const data = sorted.map(([, c]) => c);
       chartInstances['abandonReasonsChart'] = new Chart(
@@ -1012,6 +1077,12 @@
           options: {
             indexAxis: 'y',
             responsive: true,
+            onClick: (event, elements) => {
+              if (elements.length === 0) return;
+              const index = elements[0].index;
+              const reason = reasonKeys[index];
+              showAbandonedPRs(reason);
+            },
             plugins: { legend: { display: false } },
             scales: {
               x: { beginAtZero: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
