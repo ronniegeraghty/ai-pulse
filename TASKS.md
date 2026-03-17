@@ -22,14 +22,14 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 |----|------|--------|----------|
 | T05 | Create `src/fetch-prs.ts` — findCopilotPRNumbers (Search API, 3 state filters, date range, pagination) + fetchPRDetails (parallel detail fetch, concurrency=10, state classification, label filtering) | ✅ | ⬜ V05 |
 | T06 | Create `src/compute-metrics.ts` — classifyCommits (inherited filter 5min, AI vs human), computeCostScore (3*human+2*reviews+0.3*reviewComments+0.2*comments+5*abandoned, round 1 decimal), computePRMetrics (full PRData assembly) | ✅ | ✅ V06 |
-| T07 | Create `src/classify-abandon.ts` — 12 reason types, fetch comments+reviews per abandoned PR, title normalization for duplicates, PR reference extraction, keyword search fallback (60-day), REASON_DESCRIPTIONS map | ✅ | ⬜ V07 |
+| T07 | Create `src/classify-abandon.ts` — 12 reason types, fetch comments+reviews per abandoned PR, title normalization for duplicates, PR reference extraction, keyword search fallback (60-day), REASON_DESCRIPTIONS map | ✅ | ✅ V07 |
 
 ## Wave 4: Orchestrator + Sample Data (parallel)
 
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
-| T08 | Create `src/fetch-data.ts` — Main entry: load config → log rate limit → iterate repos → fetch → compute → classify → write data/pr-stats.json with full OutputData structure. Console progress output. | ⬜ | ⬜ V08 |
-| T09 | Create `docs/sample-data.json` — ~50 realistic PRs across 2 repos, all states, cost scores 0-15+, all 12 abandon reasons, diverse labels, 8+ weeks. Valid OutputData structure. | ✅ | ⬜ V09 |
+| T08 | Create `src/fetch-data.ts` — Main entry: load config → log rate limit → iterate repos → fetch → compute → classify → write data/pr-stats.json with full OutputData structure. Console progress output. | ✅ | ⬜ V08 |
+| T09 | Create `docs/sample-data.json` — ~50 realistic PRs across 2 repos, all states, cost scores 0-15+, all 12 abandon reasons, diverse labels, 8+ weeks. Valid OutputData structure. | ✅ | ✅ V09 |
 
 ## Wave 5: Dashboard Scaffold
 
