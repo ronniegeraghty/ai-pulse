@@ -1,0 +1,61 @@
+name: Collect Data & Deploy Dashboard
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"  # Every Monday at 6am UTC
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - name: Fetch PR data
+        run: npm run fetch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AI_PULSE_REPOS: ${{ vars.AI_PULSE_REPOS }}
+          AI_PULSE_START_DATE: ${{ vars.AI_PULSE_START_DATE }}
+          AI_PULSE_END_DATE: ${{ vars.AI_PULSE_END_DATE }}
+          AI_PULSE_LABELS: ${{ vars.AI_PULSE_LABELS || '' }}
+          AI_PULSE_AI_LOGINS: ${{ vars.AI_PULSE_AI_LOGINS || 'copilot,copilot[bot]' }}
+          AI_PULSE_INACTIVE_DAYS: ${{ vars.AI_PULSE_INACTIVE_DAYS || '14' }}
+
+      - name: Prepare site
+        run: |
+          mkdir -p _site/data
+          cp docs/index.html _site/index.html
+          if [ -f docs/sample-data.json ]; then
+            cp docs/sample-data.json _site/sample-data.json
+          fi
+          cp data/pr-stats.json _site/data/pr-stats.json
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
