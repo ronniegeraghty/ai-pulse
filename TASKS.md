@@ -35,7 +35,7 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
-| T10 | Create `docs/index.html` — Dark theme CSS (bg:#0d1117, surface:#161b22, etc.), Chart.js 4 + date-fns adapter CDN, layout (header→controls→cards→charts→side panel), data loading (URL param, default path, file upload, sample), responsive grid | ⬜ | ⬜ V10 |
+| T10 | Create `docs/index.html` — Dark theme CSS (bg:#0d1117, surface:#161b22, etc.), Chart.js 4 + date-fns adapter CDN, layout (header→controls→cards→charts→side panel), data loading (URL param, default path, file upload, sample), responsive grid | ✅ | ⬜ V10 |
 
 ## Wave 6: Dashboard Features (parallel)
 

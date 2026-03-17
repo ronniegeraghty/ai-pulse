@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📊 AI Pulse — Copilot PR Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --orange: #d29922;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* ─── Load Section ─── */
+    .load-section {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .load-section p {
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+    }
+
+    .load-section div {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      background: var(--surface);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+    }
+
+    input[type="file"] {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ─── Controls ─── */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-group label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .controls select,
+    .controls input[type="date"] {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      min-width: 140px;
+    }
+
+    .controls select:focus,
+    .controls input[type="date"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* ─── Summary Cards ─── */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .card .label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .card.blue .value { color: var(--accent); }
+    .card.green .value { color: var(--green); }
+    .card.orange .value { color: var(--orange); }
+    .card.red .value { color: var(--red); }
+
+    /* ─── Dashboard Layout ─── */
+    .dashboard-layout {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    .dashboard-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* ─── Charts Grid ─── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .chart-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .chart-container h3 {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .chart-container canvas {
+      width: 100% !important;
+    }
+
+    .chart-container.full-width {
+      grid-column: 1 / -1;
+    }
+
+    /* ─── Side Panel ─── */
+    .side-panel {
+      width: 420px;
+      min-width: 420px;
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .side-panel.hidden {
+      display: none;
+    }
+
+    .side-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 1;
+    }
+
+    .side-panel-header h3 {
+      flex: 1;
+      font-size: 1rem;
+    }
+
+    .side-panel-header .count {
+      background: var(--border);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+    }
+
+    .side-panel-close {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .side-panel-close:hover {
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
+    .side-panel-body {
+      padding: 12px 16px;
+    }
+
+    /* ─── PR Items (Side Panel) ─── */
+    .pr-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pr-item:last-child {
+      border-bottom: none;
+    }
+
+    .pr-item .pr-number {
+      color: var(--accent);
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+
+    .pr-item .pr-number:hover {
+      text-decoration: underline;
+    }
+
+    .pr-item .pr-title {
+      font-size: 0.9rem;
+      margin-top: 2px;
+    }
+
+    .pr-item .pr-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 900px) {
+      body {
+        padding: 16px;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-container.full-width {
+        grid-column: 1;
+      }
+
+      .dashboard-layout {
+        flex-direction: column;
+      }
+
+      .side-panel {
+        width: 100%;
+        min-width: 0;
+        position: static;
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 AI Pulse</h1>
+  <p class="subtitle">Copilot coding agent PR analytics</p>
+
+  <!-- Load Section (shown before data is loaded) -->
+  <div id="load-section" class="load-section">
+    <p>Load PR stats data:</p>
+    <div>
+      <button onclick="fetchDefault()">Load from data/pr-stats.json</button>
+      <span style="color: var(--text-muted); margin: 0 8px;">or</span>
+      <button onclick="loadSample()">Load sample data</button>
+      <span style="color: var(--text-muted); margin: 0 8px;">or</span>
+      <input type="file" id="fileInput" accept=".json" onchange="loadFile(event)">
+    </div>
+  </div>
+
+  <!-- Dashboard (shown after data is loaded) -->
+  <div id="dashboard" style="display:none;">
+
+    <!-- Filter Controls -->
+    <div class="controls">
+      <div class="control-group">
+        <label>Repository</label>
+        <select id="repoSelect"><option value="all">All Repos</option></select>
+      </div>
+      <div class="control-group">
+        <label>Area</label>
+        <select id="areaSelect"><option value="all">All Areas</option></select>
+      </div>
+      <div class="control-group">
+        <label>From</label>
+        <input type="date" id="dateFrom">
+      </div>
+      <div class="control-group">
+        <label>To</label>
+        <input type="date" id="dateTo">
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card blue"><div class="value" id="totalPRs">—</div><div class="label">Total Copilot PRs</div></div>
+      <div class="card green"><div class="value" id="mergeRate">—</div><div class="label">Merge Rate</div></div>
+      <div class="card orange"><div class="value" id="avgTimeToMerge">—</div><div class="label">Avg Time to Merge</div></div>
+      <div class="card red"><div class="value" id="avgComments">—</div><div class="label">Avg Comments per PR</div></div>
+      <div class="card green"><div class="value" id="autonomousRate">—</div><div class="label">Fully Autonomous</div></div>
+      <div class="card orange"><div class="value" id="avgCostScore">—</div><div class="label">Avg Cost Score</div></div>
+    </div>
+
+    <!-- Dashboard Layout (charts + side panel) -->
+    <div class="dashboard-layout">
+      <div class="dashboard-main">
+        <div class="charts-grid">
+          <div class="chart-container full-width"><h3>Merged vs Abandoned (Weekly)</h3><canvas id="mergedVsAbandonedChart"></canvas></div>
+          <div class="chart-container"><h3>Average Comments per PR (Weekly)</h3><canvas id="commentsChart"></canvas></div>
+          <div class="chart-container"><h3>Average Time to Merge — Days (Weekly)</h3><canvas id="timeToMergeChart"></canvas></div>
+          <div class="chart-container full-width"><h3>Human Intervention (Weekly)</h3><canvas id="humanInterventionChart"></canvas></div>
+          <div class="chart-container"><h3>Cost Score Distribution</h3><canvas id="costDistributionChart"></canvas></div>
+          <div class="chart-container"><h3>Avg Cost Score (Weekly)</h3><canvas id="avgCostChart"></canvas></div>
+          <div class="chart-container full-width"><h3>PRs by Area</h3><canvas id="prsByAreaChart"></canvas></div>
+          <div class="chart-container full-width"><h3>Avg Cost Score by Area</h3><canvas id="costByAreaChart"></canvas></div>
+          <div class="chart-container full-width"><h3>PRs by Area Over Time (Weekly)</h3><canvas id="areaOverTimeChart"></canvas></div>
+          <div class="chart-container full-width"><h3>Why Copilot PRs Get Abandoned</h3><canvas id="abandonReasonsChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Side Panel (hidden by default) -->
+      <div class="side-panel hidden" id="sidePanel">
+        <div class="side-panel-header">
+          <h3 id="sidePanelTitle">PRs</h3>
+          <span class="count" id="sidePanelCount">0</span>
+          <button class="side-panel-close" onclick="closeSidePanel()">Close</button>
+        </div>
+        <div class="side-panel-body" id="sidePanelBody"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ─── Global State ───
+    let rawData = null;       // Full loaded OutputData
+    let filteredPRs = [];     // PRs after applying filters
+    let chartInstances = {};  // Map of chart ID → Chart instance
+
+    // ─── Data Loading ───
+    async function fetchDefault() {
+      try {
+        const resp = await fetch('./data/pr-stats.json');
+        if (!resp.ok) throw new Error('Not found');
+        const data = await resp.json();
+        initDashboard(data);
+      } catch {
+        alert('Could not load data/pr-stats.json. Try uploading a file.');
+      }
+    }
+
+    async function loadSample() {
+      try {
+        const resp = await fetch('./sample-data.json');
+        if (!resp.ok) throw new Error('Not found');
+        const data = await resp.json();
+        initDashboard(data);
+      } catch {
+        alert('Could not load sample-data.json.');
+      }
+    }
+
+    function loadFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          initDashboard(data);
+        } catch {
+          alert('Invalid JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // ─── Dashboard Init ───
+    function initDashboard(data) {
+      rawData = data;
+      document.getElementById('load-section').style.display = 'none';
+      document.getElementById('dashboard').style.display = '';
+
+      // Populate filter dropdowns (T14 will implement fully)
+      populateFilters(data);
+
+      updateDashboard();
+    }
+
+    function populateFilters(data) {
+      // Stub — T14 will implement
+      // Populate repo select from data.repos keys
+      // Populate area select from unique labels
+      // Set date inputs from data.config
+    }
+
+    // ─── Core Update Loop ───
+    function updateDashboard() {
+      // 1. Apply filters to get filteredPRs
+      filteredPRs = applyFilters();
+
+      // 2. Update summary cards (T11)
+      updateSummaryCards(filteredPRs);
+
+      // 3. Update charts (T12, T13)
+      updateCharts(filteredPRs);
+    }
+
+    function applyFilters() {
+      if (!rawData) return [];
+      // Stub — T14 will implement full filtering
+      // For now, return all PRs from all repos
+      let allPRs = [];
+      for (const repoData of Object.values(rawData.repos)) {
+        allPRs.push(...repoData.prs);
+      }
+      return allPRs;
+    }
+
+    // ─── Stubs for later tasks ───
+    function updateSummaryCards(prs) { /* T11 */ }
+    function updateCharts(prs) { /* T12, T13 */ }
+    function closeSidePanel() {
+      document.getElementById('sidePanel').classList.add('hidden');
+    }
+
+    // ─── Helpers ───
+    function getWeekKey(dateStr) {
+      const d = new Date(dateStr);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+      const monday = new Date(d.setDate(diff));
+      return monday.toISOString().slice(0, 10);
+    }
+
+    function groupByWeek(prs) {
+      const weeks = {};
+      for (const pr of prs) {
+        const week = getWeekKey(pr.createdAt);
+        if (!weeks[week]) weeks[week] = [];
+        weeks[week].push(pr);
+      }
+      return Object.entries(weeks).sort(([a], [b]) => a.localeCompare(b));
+    }
+
+    function destroyChart(id) {
+      if (chartInstances[id]) {
+        chartInstances[id].destroy();
+        delete chartInstances[id];
+      }
+    }
+
+    // ─── Auto-load from URL param ───
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const dataUrl = params.get('data');
+      if (dataUrl) {
+        fetch(dataUrl).then(r => r.json()).then(initDashboard).catch(() => {});
+      }
+    })();
+  </script>
+</body>
+</html>
