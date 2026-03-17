@@ -14,7 +14,7 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 |----|------|--------|----------|
 | T02 | Create `src/types.ts` — All TypeScript interfaces (PRData with 22 fields, RepoData, OutputData, CollectionConfig, AbandonReasonSummary) | ✅ | ✅ V02 |
 | T03 | Create `src/config.ts` — Read .env via dotenv, validate repos/dates/labels/aiLogins/inactiveDays, export typed CollectionConfig | ✅ | ⬜ V03 |
-| T04 | Create `src/github-client.ts` — Token resolution (env→gh auth fallback), Octokit factory, withRetry (rate limit aware, exponential backoff, max 3) | ✅ | ⬜ V04 |
+| T04 | Create `src/github-client.ts` — Token resolution (env→gh auth fallback), Octokit factory, withRetry (rate limit aware, exponential backoff, max 3) | ✅ | ✅ V04 |
 
 ## Wave 3: Data Collection Modules (parallel)
 
