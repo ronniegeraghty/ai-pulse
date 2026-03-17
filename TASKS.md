@@ -21,7 +21,7 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
 | T05 | Create `src/fetch-prs.ts` — findCopilotPRNumbers (Search API, 3 state filters, date range, pagination) + fetchPRDetails (parallel detail fetch, concurrency=10, state classification, label filtering) | ✅ | ⬜ V05 |
-| T06 | Create `src/compute-metrics.ts` — classifyCommits (inherited filter 5min, AI vs human), computeCostScore (3*human+2*reviews+0.3*reviewComments+0.2*comments+5*abandoned, round 1 decimal), computePRMetrics (full PRData assembly) | ✅ | ⬜ V06 |
+| T06 | Create `src/compute-metrics.ts` — classifyCommits (inherited filter 5min, AI vs human), computeCostScore (3*human+2*reviews+0.3*reviewComments+0.2*comments+5*abandoned, round 1 decimal), computePRMetrics (full PRData assembly) | ✅ | ✅ V06 |
 | T07 | Create `src/classify-abandon.ts` — 12 reason types, fetch comments+reviews per abandoned PR, title normalization for duplicates, PR reference extraction, keyword search fallback (60-day), REASON_DESCRIPTIONS map | ✅ | ⬜ V07 |
 
 ## Wave 4: Orchestrator + Sample Data (parallel)
@@ -41,7 +41,7 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
-| T11 | Summary cards — 6 cards: Total PRs (blue), Merge Rate % (green), Avg TTM days (orange), Avg Comments (red), Fully Autonomous % (green), Avg Cost Score (orange). Formulas per plan spec. Wire to updateDashboard(). | ⬜ | ⬜ V11 |
+| T11 | Summary cards — 6 cards: Total PRs (blue), Merge Rate % (green), Avg TTM days (orange), Avg Comments (red), Fully Autonomous % (green), Avg Cost Score (orange). Formulas per plan spec. Wire to updateDashboard(). | ✅ | ⬜ V11 |
 | T12 | Charts 1-5 — (1) Merged vs Abandoned/week stacked bar green/red, (2) Avg Comments/week blue bar, (3) Avg TTM/week orange bar days, (4) Human Intervention/week stacked Autonomous+Human-assisted+Abandoned, (5) Cost Score Distribution 5 buckets | ⬜ | ⬜ V12 |
 | T13 | Charts 6-10 — (6) Avg Cost Score/week orange bar, (7) PRs by Area horizontal stacked merged/abandoned sorted by total desc, (8) Avg Cost by Area horizontal bar sorted by cost desc, (9) PRs by Area Over Time stacked vertical by week per label, (10) Abandon Reasons horizontal red bars sorted by count desc | ⬜ | ⬜ V13 |
 | T14 | Filter controls — Repo select, date pickers ×2, area/label select. Client-side filtering. URL param sync (read on load, write on change). Populate from loaded data. updateDashboard() on change. | ⬜ | ⬜ V14 |

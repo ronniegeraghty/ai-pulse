@@ -337,19 +337,19 @@
     <div class="controls">
       <div class="control-group">
         <label>Repository</label>
-        <select id="repoSelect"><option value="all">All Repos</option></select>
+        <select id="repoSelect" onchange="updateDashboard()"><option value="all">All Repos</option></select>
       </div>
       <div class="control-group">
         <label>Area</label>
-        <select id="areaSelect"><option value="all">All Areas</option></select>
+        <select id="areaSelect" onchange="updateDashboard()"><option value="all">All Areas</option></select>
       </div>
       <div class="control-group">
         <label>From</label>
-        <input type="date" id="dateFrom">
+        <input type="date" id="dateFrom" onchange="updateDashboard()">
       </div>
       <div class="control-group">
         <label>To</label>
-        <input type="date" id="dateTo">
+        <input type="date" id="dateTo" onchange="updateDashboard()">
       </div>
     </div>
 
@@ -450,40 +450,161 @@
     }
 
     function populateFilters(data) {
-      // Stub — T14 will implement
-      // Populate repo select from data.repos keys
-      // Populate area select from unique labels
-      // Set date inputs from data.config
+      // Repo select
+      const repoSelect = document.getElementById('repoSelect');
+      repoSelect.innerHTML = '<option value="all">All Repos</option>';
+      for (const repo of Object.keys(data.repos)) {
+        const opt = document.createElement('option');
+        opt.value = repo;
+        opt.textContent = repo;
+        repoSelect.appendChild(opt);
+      }
+
+      // Area/label select — gather all unique labels across all PRs
+      const allLabels = new Set();
+      for (const repoData of Object.values(data.repos))
+        for (const pr of repoData.prs)
+          for (const label of pr.labels)
+            allLabels.add(label);
+
+      const areaSelect = document.getElementById('areaSelect');
+      areaSelect.innerHTML = '<option value="all">All Areas</option>';
+      for (const label of [...allLabels].sort()) {
+        const opt = document.createElement('option');
+        opt.value = label;
+        opt.textContent = label;
+        areaSelect.appendChild(opt);
+      }
+
+      // Date inputs — pre-fill from config
+      document.getElementById('dateFrom').value = data.config.startDate;
+      document.getElementById('dateTo').value = data.config.endDate;
+
+      // Apply URL params if present
+      applyURLParams();
     }
 
     // ─── Core Update Loop ───
     function updateDashboard() {
-      // 1. Apply filters to get filteredPRs
       filteredPRs = applyFilters();
-
-      // 2. Update summary cards (T11)
       updateSummaryCards(filteredPRs);
-
-      // 3. Update charts (T12, T13)
       updateCharts(filteredPRs);
+      syncURLParams();
     }
 
     function applyFilters() {
       if (!rawData) return [];
-      // Stub — T14 will implement full filtering
-      // For now, return all PRs from all repos
+
+      const repoFilter = document.getElementById('repoSelect').value;
+      const areaFilter = document.getElementById('areaSelect').value;
+      const dateFrom = document.getElementById('dateFrom').value;
+      const dateTo = document.getElementById('dateTo').value;
+
       let allPRs = [];
-      for (const repoData of Object.values(rawData.repos)) {
-        allPRs.push(...repoData.prs);
+
+      // Repo filter
+      if (repoFilter === 'all') {
+        for (const repoData of Object.values(rawData.repos))
+          allPRs.push(...repoData.prs);
+      } else if (rawData.repos[repoFilter]) {
+        allPRs.push(...rawData.repos[repoFilter].prs);
       }
+
+      // Date filter
+      if (dateFrom) {
+        allPRs = allPRs.filter(pr => pr.createdAt.slice(0, 10) >= dateFrom);
+      }
+      if (dateTo) {
+        allPRs = allPRs.filter(pr => pr.createdAt.slice(0, 10) <= dateTo);
+      }
+
+      // Area/label filter
+      if (areaFilter !== 'all') {
+        allPRs = allPRs.filter(pr => pr.labels.includes(areaFilter));
+      }
+
       return allPRs;
     }
 
     // ─── Stubs for later tasks ───
-    function updateSummaryCards(prs) { /* T11 */ }
+    function updateSummaryCards(prs) {
+      // 1. Total Copilot PRs
+      document.getElementById('totalPRs').textContent = prs.length;
+
+      // 2. Merge Rate: merged / (merged + abandoned) * 100
+      const merged = prs.filter(p => p.state === 'merged');
+      const abandoned = prs.filter(p => p.state === 'abandoned');
+      const total = merged.length + abandoned.length;
+      const mergeRate = total > 0 ? ((merged.length / total) * 100).toFixed(1) : '0';
+      document.getElementById('mergeRate').textContent = mergeRate + '%';
+
+      // 3. Avg Time to Merge (days) — only merged PRs with timeToMergeDays
+      const mergeTimes = merged.map(p => p.timeToMergeDays).filter(t => t !== null && t !== undefined);
+      const avgTTM = mergeTimes.length > 0
+        ? (mergeTimes.reduce((a, b) => a + b, 0) / mergeTimes.length).toFixed(1)
+        : '—';
+      document.getElementById('avgTimeToMerge').textContent = avgTTM + (avgTTM !== '—' ? 'd' : '');
+
+      // 4. Avg Comments per PR (issue thread comments)
+      const avgComments = prs.length > 0
+        ? (prs.reduce((a, p) => a + p.commentCount, 0) / prs.length).toFixed(1)
+        : '0';
+      document.getElementById('avgComments').textContent = avgComments;
+
+      // 5. Fully Autonomous: % of merged PRs where hadHumanPush === false
+      const autonomous = merged.filter(p => !p.hadHumanPush);
+      const autoRate = merged.length > 0
+        ? ((autonomous.length / merged.length) * 100).toFixed(1)
+        : '0';
+      document.getElementById('autonomousRate').textContent = autoRate + '%';
+
+      // 6. Avg Cost Score: mean of costScore across ALL PRs (merged + abandoned)
+      const avgCost = prs.length > 0
+        ? (prs.reduce((a, p) => a + p.costScore, 0) / prs.length).toFixed(1)
+        : '0';
+      document.getElementById('avgCostScore').textContent = avgCost;
+    }
     function updateCharts(prs) { /* T12, T13 */ }
     function closeSidePanel() {
       document.getElementById('sidePanel').classList.add('hidden');
+    }
+
+    // ─── URL Parameter Sync ───
+    function applyURLParams() {
+      const params = new URLSearchParams(window.location.search);
+
+      if (params.has('repos')) {
+        document.getElementById('repoSelect').value = params.get('repos');
+      }
+      if (params.has('start')) {
+        document.getElementById('dateFrom').value = params.get('start');
+      }
+      if (params.has('end')) {
+        document.getElementById('dateTo').value = params.get('end');
+      }
+      if (params.has('labels') || params.has('area')) {
+        document.getElementById('areaSelect').value = params.get('labels') || params.get('area');
+      }
+    }
+
+    function syncURLParams() {
+      const params = new URLSearchParams();
+
+      const repo = document.getElementById('repoSelect').value;
+      if (repo !== 'all') params.set('repos', repo);
+
+      const dateFrom = document.getElementById('dateFrom').value;
+      const dateTo = document.getElementById('dateTo').value;
+      if (dateFrom) params.set('start', dateFrom);
+      if (dateTo) params.set('end', dateTo);
+
+      const area = document.getElementById('areaSelect').value;
+      if (area !== 'all') params.set('area', area);
+
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
     }
 
     // ─── Helpers ───
