@@ -564,7 +564,20 @@
         : '0';
       document.getElementById('avgCostScore').textContent = avgCost;
     }
-    function updateCharts(prs) { /* T12, T13 */ }
+    function updateCharts(prs) {
+      // T12 charts 1-5
+      renderMergedVsAbandoned(prs);
+      renderCommentsPerWeek(prs);
+      renderTimeToMerge(prs);
+      renderHumanIntervention(prs);
+      renderCostDistribution(prs);
+      // T13 charts 6-10
+      renderAvgCostPerWeek(prs);
+      renderPRsByArea(prs);
+      renderCostByArea(prs);
+      renderAreaOverTime(prs);
+      renderAbandonReasons(prs);
+    }
     function closeSidePanel() {
       document.getElementById('sidePanel').classList.add('hidden');
     }
@@ -631,6 +644,382 @@
         chartInstances[id].destroy();
         delete chartInstances[id];
       }
+    }
+
+    function formatWeekLabel(weekKey) {
+      const d = new Date(weekKey + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // ─── Chart 1: Merged vs Abandoned by Week ───
+    function renderMergedVsAbandoned(prs) {
+      destroyChart('mergedVsAbandonedChart');
+      const weeks = groupByWeek(prs);
+      const labels = weeks.map(([w]) => formatWeekLabel(w));
+      const merged = weeks.map(([, list]) => list.filter(p => p.state === 'merged').length);
+      const abandoned = weeks.map(([, list]) => list.filter(p => p.state === 'abandoned').length);
+      chartInstances['mergedVsAbandonedChart'] = new Chart(
+        document.getElementById('mergedVsAbandonedChart'),
+        {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Merged', data: merged, backgroundColor: '#3fb950' },
+              { label: 'Abandoned', data: abandoned, backgroundColor: '#f85149' }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, beginAtZero: true }
+            },
+            plugins: { legend: { labels: { color: '#e6edf3' } } }
+          }
+        }
+      );
+    }
+
+    // ─── Chart 2: Average Comments per PR by Week ───
+    function renderCommentsPerWeek(prs) {
+      destroyChart('commentsChart');
+      const weeks = groupByWeek(prs);
+      const labels = weeks.map(([w]) => formatWeekLabel(w));
+      const data = weeks.map(([, list]) => {
+        if (list.length === 0) return 0;
+        const sum = list.reduce((s, p) => s + p.commentCount, 0);
+        return +(sum / list.length).toFixed(1);
+      });
+      chartInstances['commentsChart'] = new Chart(
+        document.getElementById('commentsChart'),
+        {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{ label: 'Avg Comments', data, backgroundColor: '#58a6ff' }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, beginAtZero: true }
+            },
+            plugins: { legend: { labels: { color: '#e6edf3' } } }
+          }
+        }
+      );
+    }
+
+    // ─── Chart 3: Average Time to Merge by Week (days) ───
+    function renderTimeToMerge(prs) {
+      destroyChart('timeToMergeChart');
+      const weeks = groupByWeek(prs);
+      const labels = weeks.map(([w]) => formatWeekLabel(w));
+      const data = weeks.map(([, list]) => {
+        const mergedPRs = list.filter(p => p.state === 'merged' && p.timeToMergeDays != null);
+        if (mergedPRs.length === 0) return 0;
+        const sum = mergedPRs.reduce((s, p) => s + p.timeToMergeDays, 0);
+        return +(sum / mergedPRs.length).toFixed(1);
+      });
+      chartInstances['timeToMergeChart'] = new Chart(
+        document.getElementById('timeToMergeChart'),
+        {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{ label: 'Avg Days to Merge', data, backgroundColor: '#d29922' }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, beginAtZero: true }
+            },
+            plugins: { legend: { labels: { color: '#e6edf3' } } }
+          }
+        }
+      );
+    }
+
+    // ─── Chart 4: Human Intervention by Week ───
+    function renderHumanIntervention(prs) {
+      destroyChart('humanInterventionChart');
+      const weeks = groupByWeek(prs);
+      const labels = weeks.map(([w]) => formatWeekLabel(w));
+      const autonomous = weeks.map(([, list]) => list.filter(p => p.state === 'merged' && !p.hadHumanPush).length);
+      const humanAssisted = weeks.map(([, list]) => list.filter(p => p.state === 'merged' && p.hadHumanPush).length);
+      const abandoned = weeks.map(([, list]) => list.filter(p => p.state === 'abandoned').length);
+      chartInstances['humanInterventionChart'] = new Chart(
+        document.getElementById('humanInterventionChart'),
+        {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Autonomous', data: autonomous, backgroundColor: '#3fb950' },
+              { label: 'Human-assisted', data: humanAssisted, backgroundColor: '#d29922' },
+              { label: 'Abandoned', data: abandoned, backgroundColor: '#f85149' }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, beginAtZero: true }
+            },
+            plugins: { legend: { labels: { color: '#e6edf3' } } }
+          }
+        }
+      );
+    }
+
+    // ─── Chart 5: Cost Score Distribution ───
+    function renderCostDistribution(prs) {
+      destroyChart('costDistributionChart');
+      const buckets = [
+        { label: '0 (Autonomous)', color: '#3fb950', count: 0 },
+        { label: '0.1–3 (Low)', color: '#58a6ff', count: 0 },
+        { label: '3–6 (Medium)', color: '#d29922', count: 0 },
+        { label: '6–10 (High)', color: '#f47067', count: 0 },
+        { label: '10+ (Very High)', color: '#f85149', count: 0 }
+      ];
+      for (const pr of prs) {
+        const c = pr.costScore;
+        if (c === 0) buckets[0].count++;
+        else if (c <= 3) buckets[1].count++;
+        else if (c <= 6) buckets[2].count++;
+        else if (c <= 10) buckets[3].count++;
+        else buckets[4].count++;
+      }
+      chartInstances['costDistributionChart'] = new Chart(
+        document.getElementById('costDistributionChart'),
+        {
+          type: 'bar',
+          data: {
+            labels: buckets.map(b => b.label),
+            datasets: [{
+              label: 'PRs',
+              data: buckets.map(b => b.count),
+              backgroundColor: buckets.map(b => b.color)
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, beginAtZero: true }
+            },
+            plugins: { legend: { display: false } }
+          }
+        }
+      );
+    }
+
+    // ─── Reason Labels Map (Chart 10) ───
+    const REASON_LABELS = {
+      superseded_by_copilot: "Superseded by another Copilot PR",
+      superseded_by_human: "Superseded by a human PR",
+      superseded: "Superseded by another PR (unknown author)",
+      wip_stuck: "Agent stuck in WIP loop",
+      failed_review_feedback: "Failed to address review feedback",
+      silently_closed: "Silently closed (no comments/reviews)",
+      duplicate_retry: "Duplicate retry attempts",
+      failed_dep_upgrade: "Failed dependency upgrade",
+      not_needed: "Scope mismatch / not needed",
+      merge_conflicts: "Unresolved merge conflicts",
+      agent_unable: "Agent unable to complete",
+      agent_error: "Agent error",
+      other: "Other / unclear",
+    };
+
+    // ─── Area Color Palette (Charts 7, 9) ───
+    const AREA_COLORS = [
+      '#58a6ff', '#3fb950', '#d29922', '#f85149', '#bc8cff',
+      '#f778ba', '#79c0ff', '#56d364', '#e3b341', '#ff7b72'
+    ];
+
+    // ─── Chart 6: Avg Cost Score by Week ───
+    function renderAvgCostPerWeek(prs) {
+      destroyChart('avgCostChart');
+      const weeks = groupByWeek(prs);
+      const labels = weeks.map(([w]) => w);
+      const data = weeks.map(([, wPrs]) => {
+        const scores = wPrs.map(p => p.costScore).filter(s => s != null);
+        return scores.length ? +(scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0;
+      });
+      chartInstances['avgCostChart'] = new Chart(
+        document.getElementById('avgCostChart'), {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Avg Cost Score',
+              data,
+              backgroundColor: '#d29922',
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { beginAtZero: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+            }
+          }
+        }
+      );
+    }
+
+    // ─── Chart 7: PRs by Area (Labels) — Horizontal Stacked Bar ───
+    function renderPRsByArea(prs) {
+      destroyChart('prsByAreaChart');
+      const labelCounts = {};
+      for (const pr of prs) {
+        for (const label of pr.labels) {
+          if (!labelCounts[label]) labelCounts[label] = { merged: 0, abandoned: 0 };
+          if (pr.state === 'merged') labelCounts[label].merged++;
+          else labelCounts[label].abandoned++;
+        }
+      }
+      const sorted = Object.entries(labelCounts)
+        .sort(([, a], [, b]) => (b.merged + b.abandoned) - (a.merged + a.abandoned));
+      const labels = sorted.map(([l]) => l);
+      const merged = sorted.map(([, c]) => c.merged);
+      const abandoned = sorted.map(([, c]) => c.abandoned);
+      chartInstances['prsByAreaChart'] = new Chart(
+        document.getElementById('prsByAreaChart'), {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Merged', data: merged, backgroundColor: '#3fb950', borderRadius: 4 },
+              { label: 'Abandoned', data: abandoned, backgroundColor: '#f85149', borderRadius: 4 }
+            ]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { labels: { color: '#8b949e' } } },
+            scales: {
+              x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+            }
+          }
+        }
+      );
+    }
+
+    // ─── Chart 8: Avg Cost Score by Area — Horizontal Bar ───
+    function renderCostByArea(prs) {
+      destroyChart('costByAreaChart');
+      const labelScores = {};
+      for (const pr of prs) {
+        for (const label of pr.labels) {
+          if (!labelScores[label]) labelScores[label] = [];
+          if (pr.costScore != null) labelScores[label].push(pr.costScore);
+        }
+      }
+      const sorted = Object.entries(labelScores)
+        .map(([label, scores]) => ({
+          label,
+          avg: scores.length ? +(scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0
+        }))
+        .sort((a, b) => b.avg - a.avg);
+      chartInstances['costByAreaChart'] = new Chart(
+        document.getElementById('costByAreaChart'), {
+          type: 'bar',
+          data: {
+            labels: sorted.map(s => s.label),
+            datasets: [{
+              label: 'Avg Cost Score',
+              data: sorted.map(s => s.avg),
+              backgroundColor: '#d29922',
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { beginAtZero: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+            }
+          }
+        }
+      );
+    }
+
+    // ─── Chart 9: PRs by Area Over Time by Week — Stacked Vertical ───
+    function renderAreaOverTime(prs) {
+      destroyChart('areaOverTimeChart');
+      const allLabels = new Set();
+      for (const pr of prs) pr.labels.forEach(l => allLabels.add(l));
+      const labelList = [...allLabels].sort();
+      const weeks = groupByWeek(prs);
+      const weekLabels = weeks.map(([w]) => w);
+      const datasets = labelList.map((label, i) => ({
+        label,
+        data: weeks.map(([, wPrs]) => wPrs.filter(p => p.labels.includes(label)).length),
+        backgroundColor: AREA_COLORS[i % AREA_COLORS.length],
+        borderRadius: 4,
+      }));
+      chartInstances['areaOverTimeChart'] = new Chart(
+        document.getElementById('areaOverTimeChart'), {
+          type: 'bar',
+          data: { labels: weekLabels, datasets },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#8b949e' } } },
+            scales: {
+              x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { stacked: true, beginAtZero: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+            }
+          }
+        }
+      );
+    }
+
+    // ─── Chart 10: Why Copilot PRs Get Abandoned ───
+    function renderAbandonReasons(prs) {
+      destroyChart('abandonReasonsChart');
+      const reasonCounts = {};
+      if (rawData) {
+        for (const repoData of Object.values(rawData.repos)) {
+          for (const ar of (repoData.abandonReasons || [])) {
+            reasonCounts[ar.reason] = (reasonCounts[ar.reason] || 0) + ar.count;
+          }
+        }
+      }
+      const sorted = Object.entries(reasonCounts)
+        .sort(([, a], [, b]) => b - a);
+      const labels = sorted.map(([r]) => REASON_LABELS[r] || r);
+      const data = sorted.map(([, c]) => c);
+      chartInstances['abandonReasonsChart'] = new Chart(
+        document.getElementById('abandonReasonsChart'), {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Abandoned PRs',
+              data,
+              backgroundColor: '#f85149',
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { beginAtZero: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+            }
+          }
+        }
+      );
     }
 
     // ─── Auto-load from URL param ───
