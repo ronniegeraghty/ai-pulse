@@ -58,4 +58,4 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
-| T18 | Integration test — Run npm run fetch (small date range, real repo). Load in dashboard. Verify all cards, charts, filters, side panel work end-to-end. | ⬜ | ⬜ V18 |
+| T18 | Integration test — Run npm run fetch (small date range, real repo). Load in dashboard. Verify all cards, charts, filters, side panel work end-to-end. | ✅ | ✅ V18 |
