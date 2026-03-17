@@ -13,14 +13,14 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
 | T02 | Create `src/types.ts` — All TypeScript interfaces (PRData with 22 fields, RepoData, OutputData, CollectionConfig, AbandonReasonSummary) | ✅ | ✅ V02 |
-| T03 | Create `src/config.ts` — Read .env via dotenv, validate repos/dates/labels/aiLogins/inactiveDays, export typed CollectionConfig | ✅ | ⬜ V03 |
+| T03 | Create `src/config.ts` — Read .env via dotenv, validate repos/dates/labels/aiLogins/inactiveDays, export typed CollectionConfig | ✅ | ✅ V03 |
 | T04 | Create `src/github-client.ts` — Token resolution (env→gh auth fallback), Octokit factory, withRetry (rate limit aware, exponential backoff, max 3) | ✅ | ✅ V04 |
 
 ## Wave 3: Data Collection Modules (parallel)
 
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
-| T05 | Create `src/fetch-prs.ts` — findCopilotPRNumbers (Search API, 3 state filters, date range, pagination) + fetchPRDetails (parallel detail fetch, concurrency=10, state classification, label filtering) | ⬜ | ⬜ V05 |
+| T05 | Create `src/fetch-prs.ts` — findCopilotPRNumbers (Search API, 3 state filters, date range, pagination) + fetchPRDetails (parallel detail fetch, concurrency=10, state classification, label filtering) | ✅ | ⬜ V05 |
 | T06 | Create `src/compute-metrics.ts` — classifyCommits (inherited filter 5min, AI vs human), computeCostScore (3*human+2*reviews+0.3*reviewComments+0.2*comments+5*abandoned, round 1 decimal), computePRMetrics (full PRData assembly) | ✅ | ⬜ V06 |
 | T07 | Create `src/classify-abandon.ts` — 12 reason types, fetch comments+reviews per abandoned PR, title normalization for duplicates, PR reference extraction, keyword search fallback (60-day), REASON_DESCRIPTIONS map | ⬜ | ⬜ V07 |
 
