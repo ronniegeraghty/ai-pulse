@@ -6,7 +6,7 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
-| T01 | Create repo + initial scaffold | ⬜ | — |
+| T01 | Create repo + initial scaffold | ✅ | — |
 
 ## Wave 2: Foundation (parallel)
 
