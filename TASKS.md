@@ -29,7 +29,7 @@ Status: ⬜ Pending | 🔄 In Progress | ✅ Done | ❌ Failed
 | ID | Task | Status | Verified |
 |----|------|--------|----------|
 | T08 | Create `src/fetch-data.ts` — Main entry: load config → log rate limit → iterate repos → fetch → compute → classify → write data/pr-stats.json with full OutputData structure. Console progress output. | ⬜ | ⬜ V08 |
-| T09 | Create `docs/sample-data.json` — ~50 realistic PRs across 2 repos, all states, cost scores 0-15+, all 12 abandon reasons, diverse labels, 8+ weeks. Valid OutputData structure. | ⬜ | ⬜ V09 |
+| T09 | Create `docs/sample-data.json` — ~50 realistic PRs across 2 repos, all states, cost scores 0-15+, all 12 abandon reasons, diverse labels, 8+ weeks. Valid OutputData structure. | ✅ | ⬜ V09 |
 
 ## Wave 5: Dashboard Scaffold
 
